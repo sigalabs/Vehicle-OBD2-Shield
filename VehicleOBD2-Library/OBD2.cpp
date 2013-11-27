@@ -24,7 +24,7 @@
     Library Version
     ------------------------------------
 	BETA    (010) 0.10   First public beta
-						 
+	BETA	(011) 0.11	Added DTC handle, Speed PID result fixed.						 
 		 
 	
 	
@@ -336,7 +336,7 @@ char OBD2::get_pid(byte pid, long *ret)
   case MAF_AIR_FLOW:
   break;
   case VEHICLE_SPEED:
-    *ret=buf[0];
+    *ret=buf[0] / 100U;
   break;
   case FUEL_STATUS:
   case LOAD_VALUE:
@@ -517,4 +517,115 @@ int OBD2::RPM()
   
   return (int)tempLong;
 }
+
+
+bool OBD2::dtc_clear(void)
+{
+	char cmd_answer[DTC_BUFFER]="";
+	
+	stn1110_write("04\r");
+	stn1110_read(cmd_answer,DTC_BUFFER);
+    strip_answer(cmd_answer);
+
+    if (strcmp(cmd_answer, "44")!=0)
+    {
+       return false;
+    } else
+    {
+		has_dtc=false;
+       return true;
+    }
+    
+    return true;
+}
+
+
+
+
+
+bool OBD2::dtc_read(void)
+{
+    char cmd_answer[DTC_BUFFER]="";
+	has_dtc=false;
+     
+	stn1110_write("03\r");
+       
+	stn1110_read(cmd_answer,DTC_BUFFER);
+	
+	
+                   
+	for (char i=0;i<MAX_DTC_READ;i++)
+	{
+		strcpy(DTC[i].code,"");
+	}
+	
+	strip_answer(cmd_answer);
+
+		
+
+	if (strstr(cmd_answer, "NODATA"))
+    {
+	//No errors
+		return true;
+    }
+	
+	
+    if (strncmp(cmd_answer, "43", 2)!=0)
+    {
+	   
+	//ERROR: Incorrect answer
+	return false;
+    }
+    
+  
+						  
+    char *ss=cmd_answer+2;
+	char dtclen=0;
+	
+    while (strlen(ss) >= 4)
+    {
+	const char *prefix[16]=
+	    {
+		"P0", "P1", "P2", "P3",
+		"C0", "C1", "C2", "C3",
+		"B0", "B1", "B2", "B3",
+		"U0", "U1", "U2", "U3",
+	    };
+	uint8_t p=0;
+	if ( ((*ss)>='0') && ((*ss)<='9') ) p=(*ss)-'0'; else
+	if ( ((*ss)>='A') && ((*ss)<='F') ) p=(*ss)-'A'+10; else
+	if ( ((*ss)>='a') && ((*ss)<='f') ) p=(*ss)-'a'+10;
+	char code[6];
+	strcpy(code, prefix[p]);
+	code[2]=ss[1];
+	code[3]=ss[2];
+	code[4]=ss[3];
+	code[5]=0;
+	 
+	if (strcmp(code, "P0000")!=0)
+	{
+		strcpy(DTC[dtclen].code,code);
+	    has_dtc=true;
+		dtclen++;
+	}
+	ss+=4;
+    }
+    
+    return true;
+}
+
+char *OBD2::strip_answer(char *s)
+{
+    char *ss;
+    for (ss=s; *s; s++)
+    {
+	if ( ((*s)!=' ') && ((*s)!='\t') && ((*s)!='\n') && ((*s)!='\r') )
+	    (*ss++)=(*s);
+    }
+    (*ss)=0;
+	
+	return s;
+}
+
+
 
