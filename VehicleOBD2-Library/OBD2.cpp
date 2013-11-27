@@ -24,7 +24,7 @@
     Library Version
     ------------------------------------
 	BETA    (010) 0.10   First public beta
-	BETA	(011) 0.11	Added DTC handle, Speed PID result fixed.						 
+	BETA	(011) 0.11	 Added DTC handle, Speed PID result fixed.						 
 		 
 	
 	
