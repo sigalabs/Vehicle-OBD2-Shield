@@ -28,7 +28,7 @@
 #endif
 
 
-#define OBD2_LIB_VERSION 010 // library version X.YY (e.g. 1.00)
+#define OBD2_LIB_VERSION 011 // library version X.YY (e.g. 1.00)
 
 #define NUL     '\0'
 #define CR      '\r' 
@@ -37,6 +37,7 @@
 
 #define STRLEN  40
 
+#define DTC_BUFFER (MAX_DTC_READ*6)+2
 //OBD2 PIDs
 
 #define PID_SUPPORT00 0x00
@@ -123,6 +124,8 @@
 #define LAST_PID      0x52 
 
 
+//DTCs
+#define MAX_DTC_READ 5
 	
 class OBD2
 {
@@ -146,15 +149,24 @@ class OBD2
 	char Refresh(void);
 	int Speed(void);
 	int RPM(void);
+	bool dtc_read(void);
+	bool dtc_clear(void);
+	//Structures
+	struct DTC_t {
+		char code[6];
+	} DTC[MAX_DTC_READ];
 	
 
 	//Variables
 	char isIgnitionOn;
     char isEngineOn;
+	bool has_dtc;
 
   private:
     HardwareSerial *_Serial;
 
+	//Functions
+	char *strip_answer(char *s);
     unsigned long  pid01to20_support;  
 	unsigned long  pid21to40_support;
 	unsigned long  pid41to60_support;
@@ -163,7 +175,4 @@ class OBD2
 
 
 };
-
-
-
 #endif
